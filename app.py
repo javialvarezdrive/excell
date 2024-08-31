@@ -1,5 +1,6 @@
 import pandas as pd
 from taipy.gui import Gui, notify
+import os
 
 # Inicializa variables globales
 df = pd.DataFrame()  # DataFrame vacío para almacenar los datos cargados
@@ -92,6 +93,6 @@ state = {
     "fig_pie": {}
 }
 
-# Inicializar la aplicación Taipy
+# Inicializar la aplicación Taipy con el puerto correcto
 gui = Gui(page)
-gui.run(state=state)
+gui.run(state=state, port=int(os.getenv("PORT", 8080)))
