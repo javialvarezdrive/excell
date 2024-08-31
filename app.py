@@ -1,67 +1,97 @@
-import streamlit as st
 import pandas as pd
-import plotly.express as px
+from taipy.gui import Gui, notify
 
-# Configurar la página de Streamlit
-st.set_page_config(page_title="Dashboard de Datos", layout="wide")
+# Inicializa variables globales
+df = pd.DataFrame()  # DataFrame vacío para almacenar los datos cargados
+filtered_df = pd.DataFrame()  # DataFrame para los datos filtrados
+required_columns = ['Genero', 'Categoria', 'Club']  # Columnas requeridas
 
-# Título de la aplicación
-st.title("Dashboard Interactivo de Datos 📊")
+# Definir la estructura de la interfaz
+page = """
+# Dashboard Interactivo de Datos 📊
 
-# Cargar archivo Excel
-st.sidebar.header("Sube tu archivo Excel")
-uploaded_file = st.sidebar.file_uploader("Elige un archivo Excel", type=["xlsx"])
+<|layout|columns=1 3 1|
+<|{title}|label|class_name=title|>
 
-# Si el usuario ha subido un archivo
-if uploaded_file:
-    # Leer el archivo Excel
-    df = pd.read_excel(uploaded_file)
+<|file_selector|label=Sube tu archivo Excel|file_ext=xlsx|on_change=load_file|>
 
-    # Mostrar solo las primeras 5 filas de los datos cargados
-    st.write("### Primeras 5 Filas de los Datos Cargados:")
-    st.write(df.head(5))  # Mostrar solo las primeras 5 filas
+|>
 
-    # Verificar si las columnas necesarias existen
-    required_columns = ['Genero', 'Categoria', 'Club']
-    if all(column in df.columns for column in required_columns):
-        
-        # Filtros en la barra lateral
-        st.sidebar.header("Filtros")
-        genero = st.sidebar.multiselect("Selecciona Género:", options=df['Genero'].unique(), default=df['Genero'].unique())
-        categoria = st.sidebar.multiselect("Selecciona Categoría:", options=df['Categoria'].unique(), default=df['Categoria'].unique())
-        club = st.sidebar.multiselect("Selecciona Club:", options=df['Club'].unique(), default=df['Club'].unique())
+<|layout|columns=1 1 1|
+<|multiselect|value={genero}|options={genero_options}|label=Selecciona Género|>
 
-        # Filtrar los datos basado en la selección del usuario
-        filtered_df = df[
-            (df['Genero'].isin(genero)) &
-            (df['Categoria'].isin(categoria)) &
-            (df['Club'].isin(club))
-        ]
+<|multiselect|value={categoria}|options={categoria_options}|label=Selecciona Categoría|>
 
-        # Mostrar solo las primeras 5 filas de los datos filtrados
-        st.write("### Primeras 5 Filas de los Datos Filtrados:")
-        st.write(filtered_df.head(5))
+<|multiselect|value={club}|options={club_options}|label=Selecciona Club|>
+|>
 
-        # Mostrar más filas si el usuario lo desea
-        if st.button("Mostrar más filas"):
-            st.write(filtered_df)
+<|{filtered_df}|table|width=100%|height=400px|>
+<|button|label=Mostrar más filas|on_action=show_all|>
 
-        # Visualizaciones con Plotly
-        st.write("### Visualización de Datos")
+<|{fig_bar}|chart|type=bar|width=100%|height=400px|>
 
-        # Ejemplo: Gráfico de barras de la cantidad por categoría
-        fig = px.bar(filtered_df, x='Categoria', color='Genero', barmode='group',
-                     title="Distribución por Categoría y Género",
-                     labels={'Categoria': 'Categoría', 'count': 'Cantidad'})
+<|{fig_pie}|chart|type=pie|width=100%|height=400px|>
+"""
 
-        st.plotly_chart(fig, use_container_width=True)
+# Función para cargar y mostrar el archivo Excel
+def load_file(state):
+    global df, filtered_df
+    try:
+        df = pd.read_excel(state.file_selector)
+        if all(column in df.columns for column in required_columns):
+            state.genero_options = list(df['Genero'].unique())
+            state.categoria_options = list(df['Categoria'].unique())
+            state.club_options = list(df['Club'].unique())
+            filter_data(state)  # Filtrar datos inicialmente
+        else:
+            notify(state, "error", "El archivo debe contener las columnas: Genero, Categoria, y Club.")
+    except Exception as e:
+        notify(state, "error", f"Error al cargar el archivo: {e}")
 
-        # Ejemplo: Gráfico de torta por club
-        fig2 = px.pie(filtered_df, names='Club', title="Distribución por Club")
-        st.plotly_chart(fig2, use_container_width=True)
+# Función para filtrar los datos
+def filter_data(state):
+    global df, filtered_df
+    filtered_df = df[
+        (df['Genero'].isin(state.genero)) &
+        (df['Categoria'].isin(state.categoria)) &
+        (df['Club'].isin(state.club))
+    ]
+    state.filtered_df = filtered_df.head(5)  # Mostrar las primeras 5 filas
 
-    else:
-        st.error("El archivo debe contener las columnas: Genero, Categoria, y Club.")
+    # Crear gráficos
+    state.fig_bar = {
+        "x": filtered_df['Categoria'],
+        "y": filtered_df.groupby('Categoria')['Genero'].count(),
+        "color": filtered_df['Genero'],
+        "type": "bar",
+        "title": "Distribución por Categoría y Género",
+        "labels": {"x": "Categoría", "y": "Cantidad"}
+    }
+    state.fig_pie = {
+        "labels": filtered_df['Club'],
+        "values": filtered_df['Club'].value_counts(),
+        "type": "pie",
+        "title": "Distribución por Club"
+    }
 
-else:
-    st.info("Por favor sube un archivo Excel para comenzar.")
+# Función para mostrar todas las filas
+def show_all(state):
+    state.filtered_df = filtered_df  # Mostrar todas las filas
+
+# Configuración inicial del estado
+state = {
+    "file_selector": "",
+    "genero": [],
+    "genero_options": [],
+    "categoria": [],
+    "categoria_options": [],
+    "club": [],
+    "club_options": [],
+    "filtered_df": pd.DataFrame(),
+    "fig_bar": {},
+    "fig_pie": {}
+}
+
+# Inicializar la aplicación Taipy
+gui = Gui(page)
+gui.run(state=state)
