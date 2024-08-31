@@ -17,9 +17,9 @@ if uploaded_file:
     # Leer el archivo Excel
     df = pd.read_excel(uploaded_file)
 
-    # Mostrar los datos cargados
-    st.write("### Datos Cargados:")
-    st.write(df.head())
+    # Mostrar solo las primeras 5 filas de los datos cargados
+    st.write("### Primeras 5 Filas de los Datos Cargados:")
+    st.write(df.head(5))  # Mostrar solo las primeras 5 filas
 
     # Verificar si las columnas necesarias existen
     required_columns = ['Genero', 'Categoria', 'Club']
@@ -38,9 +38,13 @@ if uploaded_file:
             (df['Club'].isin(club))
         ]
 
-        # Mostrar los datos filtrados
-        st.write("### Datos Filtrados:")
-        st.write(filtered_df)
+        # Mostrar solo las primeras 5 filas de los datos filtrados
+        st.write("### Primeras 5 Filas de los Datos Filtrados:")
+        st.write(filtered_df.head(5))
+
+        # Mostrar más filas si el usuario lo desea
+        if st.button("Mostrar más filas"):
+            st.write(filtered_df)
 
         # Visualizaciones con Plotly
         st.write("### Visualización de Datos")
