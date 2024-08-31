@@ -12,18 +12,16 @@ page = """
 # Dashboard Interactivo de Datos 📊
 
 <|layout|columns=1 3 1|
-<|{title}|label|class_name=title|>
-
-<|file_selector|label=Sube tu archivo Excel|file_ext=xlsx|on_change=load_file|>
-
+<|! Load your Excel file|>
+<|{file_selector}|file_selector|extensions=xlsx|on_change=load_file|>
 |>
 
 <|layout|columns=1 1 1|
-<|multiselect|value={genero}|options={genero_options}|label=Selecciona Género|>
+<|multiselect|value={genero}|options={genero_options}|label=Selecciona Género:|>
 
-<|multiselect|value={categoria}|options={categoria_options}|label=Selecciona Categoría|>
+<|multiselect|value={categoria}|options={categoria_options}|label=Selecciona Categoría:|>
 
-<|multiselect|value={club}|options={club_options}|label=Selecciona Club|>
+<|multiselect|value={club}|options={club_options}|label=Selecciona Club:|>
 |>
 
 <|{filtered_df}|table|width=100%|height=400px|>
