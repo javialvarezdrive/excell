@@ -93,6 +93,6 @@ state = {
     "fig_pie": {}
 }
 
-# Inicializar la aplicación Taipy con el puerto correcto
+# Inicializar la aplicación Taipy con la dirección y puerto correctos
 gui = Gui(page)
-gui.run(state=state, port=int(os.getenv("PORT", 8080)))
+gui.run(state=state, host='0.0.0.0', port=int(os.getenv("PORT", 8080)))
